@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Reclusos</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f4f4f9;
+        }
+
+        #formularioRecluso {
+            display: none;
+        }
+
+        .table th,
+        .table td {
+            vertical-align: middle;
+        }
+
+        .btn-primary {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Sistema de Gestión</a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="inicio.html">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="reclusos.html">Reclusos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="visitantes.html">Visitantes</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="personal.html">Personal</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="perfil.html">Perfil</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h1 class="text-center">Gestión de Reclusos</h1>
+        <button class="btn btn-primary my-3" id="nuevoReclusoBtn" disabled>Nuevo Recluso</button>
+
+        <!-- Tabla de reclusos -->
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Identificación</th>
+                    <th>#Recluso</th>
+                    <th>Delitos Cometidos</th>
+                    <th>Condena</th>
+                    <th>Fecha de Ingreso</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaReclusos">
+                <!-- Los datos de los reclusos se añadirán aquí -->
+            </tbody>
+        </table>
+
+        <!-- Formulario para agregar/editar recluso -->
+        <div id="formularioRecluso">
+            <h3 id="formTitle">Agregar Recluso</h3>
+            <form id="reclusoForm">
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="nombre" required>
+                </div>
+                <div class="mb-3">
+                    <label for="identificacion" class="form-label">Identificación</label>
+                    <input type="text" class="form-control" id="identificacion" required>
+                </div>
+                <div class="mb-3">
+                    <label for="numeroRecluso" class="form-label">#Recluso</label>
+                    <input type="number" class="form-control" id="numeroRecluso" required>
+                </div>
+                <div class="mb-3">
+                    <label for="delitos" class="form-label">Delitos Cometidos</label>
+                    <textarea class="form-control" id="delitos" rows="3" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="condena" class="form-label">Condena</label>
+                    <input type="text" class="form-control" id="condena" required>
+                </div>
+                <div class="mb-3">
+                    <label for="fechaIngreso" class="form-label">Fecha de Ingreso</label>
+                    <input type="date" class="form-control" id="fechaIngreso" required>
+                </div>
+                <button type="submit" class="btn btn-success">Guardar</button>
+                <button type="button" class="btn btn-secondary" id="cancelarBtn">Cancelar</button>
+            </form>
+        </div>
+    </div>
+    <!-- Modal para Historial Médico -->
+    <div class="modal fade" id="historialModal" tabindex="-1" role="dialog" aria-labelledby="historialModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="historialModalLabel">Historial Médico</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <textarea class="form-control" id="historialMedico" rows="5"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="guardarHistorialBtn">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        // Obtener el usuario logueado del localStorage
+        const loggedUser = JSON.parse(localStorage.getItem('loggedUser'));
+        const adminAccount = JSON.parse(localStorage.getItem('adminAccount'));
+
+        // Verificar si hay un usuario logueado
+        if (loggedUser) {
+            // Habilitar acciones según el rol del usuario
+            if (loggedUser.cargo === "Guardia" || loggedUser.cedula === adminAccount.cedula) {
+                document.getElementById('nuevoReclusoBtn').disabled = false;
+            }
+        } else {
+            // Si no hay usuario logueado, redirigir a la página de inicio de sesión
+            alert("Por favor, inicia sesión primero.");
+            window.location.href = "index.html";
+        }
+
+        // Variables globales
+        let reclusos = JSON.parse(localStorage.getItem('reclusos')) || [];
+        let editIndex = -1; // Para saber si estamos editando un recluso
+
+        // Mostrar/Ocultar el formulario
+        const formularioRecluso = document.getElementById('formularioRecluso');
+        const nuevoReclusoBtn = document.getElementById('nuevoReclusoBtn');
+        const cancelarBtn = document.getElementById('cancelarBtn');
+        const formTitle = document.getElementById('formTitle');
+        const reclusoForm = document.getElementById('reclusoForm');
+
+        nuevoReclusoBtn.addEventListener('click', () => {
+            formularioRecluso.style.display = 'block';
+            formTitle.textContent = 'Agregar Recluso';
+            reclusoForm.reset(); // Limpiar el formulario
+            editIndex = -1; // Indicamos que no estamos editando
+        });
+
+        cancelarBtn.addEventListener('click', () => {
+            formularioRecluso.style.display = 'none';
+        });
+
+        // Agregar/Editar recluso
+        reclusoForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const numeroRecluso = document.getElementById('numeroRecluso').value;
+            if (editIndex === -1 && reclusos.some(r => r.numeroRecluso == numeroRecluso)) {
+                alert('El número de recluso ya está en uso. Por favor, elige otro.');
+                return;
+            }
+
+            const recluso = {
+                nombre: document.getElementById('nombre').value,
+                identificacion: document.getElementById('identificacion').value,
+                numeroRecluso: numeroRecluso,
+                delitos: document.getElementById('delitos').value,
+                condena: document.getElementById('condena').value,
+                fechaIngreso: document.getElementById('fechaIngreso').value,
+                historialMedico: '' // Inicializar historial médico
+            };
+
+            if (editIndex === -1) {
+                // Agregar nuevo recluso
+                reclusos.push(recluso);
+            } else {
+                // Editar recluso existente
+                reclusos[editIndex] = recluso;
+            }
+
+            // Guardar en localStorage
+            localStorage.setItem('reclusos', JSON.stringify(reclusos));
+
+            formularioRecluso.style.display = 'none';
+            actualizarTabla();
+        });
+
+        // Actualizar la tabla de reclusos
+        function actualizarTabla() {
+            const tablaReclusos = document.getElementById('tablaReclusos');
+            tablaReclusos.innerHTML = '';
+
+            reclusos.forEach((recluso, index) => {
+                const fila = document.createElement('tr');
+
+                fila.innerHTML = `
+                    <td>${recluso.nombre}</td>
+                    <td>${recluso.identificacion}</td>
+                    <td>${recluso.numeroRecluso}</td>
+                    <td>${recluso.delitos}</td>
+                    <td>${recluso.condena}</td>
+                    <td>${recluso.fechaIngreso}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="editarRecluso(${index})">Editar</button>
+                        <button class="btn btn-danger btn-sm" onclick="eliminarRecluso(${index})">Eliminar</button>
+                        <button class="btn btn-info btn-sm" onclick="abrirHistorialMedico(${index})" ${(!isUserAuthorizedForHistorial()) ? 'disabled' : ''}>Historial Médico</button>
+                    </td>
+                `;
+
+                tablaReclusos.appendChild(fila);
+            });
+
+            // Deshabilitar botones de acciones si el usuario no es guardia o administrador
+            if (loggedUser.cargo !== "Guardia" && loggedUser.cedula !== adminAccount.cedula) {
+                const btns = document.querySelectorAll('.btn-warning, .btn-danger');
+                btns.forEach(btn => btn.disabled = true);
+            }
+        }
+
+        // Abrir el modal del historial médico
+        function abrirHistorialMedico(index) {
+            const recluso = reclusos[index];
+            document.getElementById('historialMedico').value = recluso.historialMedico || ''; // Cargar historial médico
+            $('#historialModal').modal('show'); // Mostrar modal
+            editIndex = index; // Guardar el índice del recluso
+        }
+
+        // Guardar historial médico
+        document.getElementById('guardarHistorialBtn').addEventListener('click', () => {
+            const historialMedico = document.getElementById('historialMedico').value;
+            if (editIndex !== -1) {
+                reclusos[editIndex].historialMedico = historialMedico; // Actualizar historial
+                localStorage.setItem('reclusos', JSON.stringify(reclusos));
+                $('#historialModal').modal('hide'); // Cerrar modal
+            } else {
+                alert('Error al guardar el historial médico.'); // En caso de que editIndex sea -1
+            }
+        });
+        // Función para verificar si el usuario está autorizado para ver el historial médico
+        function isUserAuthorizedForHistorial() {
+            return loggedUser.cargo === "Medico" || loggedUser.cargo === "Enfermero" || loggedUser.cargo === "Psicologo" || loggedUser.cedula === adminAccount.cedula;
+        }
+
+        // Inicializar la tabla al cargar la página
+        actualizarTabla();
+    </script>
+</body>
+</html>

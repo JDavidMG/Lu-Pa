@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Visitantes</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f4f4f9;
+        }
+        #visitorForm {
+            display: none; /* Ocultamos el formulario inicialmente */
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Sistema de Gestión</a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="inicio.html">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="reclusos.html">Reclusos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="visitantes.html">Visitantes</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="personal.html">Personal</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="perfil.html">Perfil</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1>Registro de Visitantes</h1>
+        <button class="btn btn-primary" id="newVisitorButton">Nuevo Visitante</button>
+        <button class="btn btn-secondary" id="filterButton">Filtrar</button>
+
+        <div id="filterForm" class="mt-3" style="display:none;">
+            <h2>Filtrar por Recluso</h2>
+            <div class="form-group">
+                <label for="filterInmateId">Seleccione un Recluso:</label>
+                <select class="form-control" id="filterInmateId" required>
+                    <option value="">Todos</option>
+                    <!-- Opciones de reclusos se llenarán aquí -->
+                </select>
+                <button class="btn btn-info mt-2" id="applyFilterButton">Aplicar Filtro</button>
+            </div>
+        </div>
+
+        <div id="visitorForm" class="mt-3">
+            <h2>Agregar Visitante</h2>
+            <form id="form">
+                <div class="form-group">
+                    <label for="visitorName">Nombre Visitante:</label>
+                    <input type="text" class="form-control" id="visitorName" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitorId">Identificación Visitante:</label>
+                    <input type="text" class="form-control" id="visitorId" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitorRelation">Relación con el recluso:</label>
+                    <input type="text" class="form-control" id="visitorRelation" required>
+                </div>
+                <div class="form-group">
+                    <label for="inmateId">Identificación Recluso:</label>
+                    <select class="form-control" id="inmateId" required>
+                        <option value="">Seleccione un recluso</option>
+                        <!-- Opciones de reclusos se llenarán aquí -->
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success">Agregar Visitante</button>
+                <button type="button" class="btn btn-secondary" id="cancelButton">Cancelar</button>
+            </form>
+        </div>
+
+        <h2 class="mt-4">Lista de Visitantes</h2>
+        <table class="table table-bordered" id="visitorsTable">
+            <thead>
+                <tr>
+                    <th>Nombre Visitante</th>
+                    <th>Identificación Visitante</th>
+                    <th>Relación con el recluso</th>
+                    <th>Identificación Recluso</th>
+                    <th>Fecha de Ingreso</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Las filas de visitantes se agregarán aquí -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let visitas = JSON.parse(localStorage.getItem('historialVisitas')) || []; // Cargar historial de visitas
+        let filterInmateId = ''; // Para almacenar el ID del recluso seleccionado para filtrar
+
+        // Cargar reclusos desde localStorage y llenar el select
+        function cargarReclusos() {
+            const reclusos = JSON.parse(localStorage.getItem('reclusos')) || [];
+            const inmateSelect = document.getElementById('inmateId');
+            const filterInmateSelect = document.getElementById('filterInmateId');
+
+            // Verificar si hay reclusos disponibles
+            if (reclusos.length === 0) {
+                alert('No hay reclusos registrados. Agregue reclusos primero.');
+                return;
+            }
+
+            reclusos.forEach(recluso => {
+                const option = document.createElement('option');
+                option.value = recluso.numeroRecluso; // Establecer el valor como el número de recluso
+                option.textContent = `${recluso.nombre} - ${recluso.numeroRecluso}`; // Mostrar nombre e identificación
+                inmateSelect.appendChild(option);
+                filterInmateSelect.appendChild(option.cloneNode(true)); // Clonar opción para el filtro
+            });
+        }
+
+        // Cargar y mostrar visitantes filtrados en la tabla
+        function mostrarVisitantes() {
+            const tableBody = document.getElementById('visitorsTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Limpiar la tabla antes de llenarla
+
+            const filteredVisits = filterInmateId ? visitas.filter(visita => visita.identificacionRecluso === filterInmateId) : visitas;
+
+            filteredVisits.forEach(visita => {
+                const newRow = tableBody.insertRow();
+                newRow.innerHTML = `
+                    <td>${visita.nombre}</td>
+                    <td>${visita.identificacionVisitante}</td>
+                    <td>${visita.relacionRecluso}</td>
+                    <td>${visita.identificacionRecluso}</td>
+                    <td>${visita.fechaIngreso}</td>
+                `;
+            });
+        }
+
+        document.getElementById('newVisitorButton').onclick = function() {
+            document.getElementById('visitorForm').style.display = 'block';
+            document.getElementById('filterForm').style.display = 'none'; // Ocultar filtro al abrir el formulario
+        };
+
+        document.getElementById('filterButton').onclick = function() {
+            document.getElementById('filterForm').style.display = 'block'; // Mostrar formulario de filtro
+            document.getElementById('visitorForm').style.display = 'none'; // Ocultar formulario de visitante
+        };
+
+        document.getElementById('applyFilterButton').onclick = function() {
+            filterInmateId = document.getElementById('filterInmateId').value; // Obtener el ID del recluso seleccionado
+            mostrarVisitantes(); // Mostrar visitantes filtrados
+        };
+
+        document.getElementById('form').onsubmit = function(event) {
+            event.preventDefault(); // Evita el envío del formulario
+
+            const name = document.getElementById('visitorName').value;
+            const visitorId = document.getElementById('visitorId').value;
+            const relation = document.getElementById('visitorRelation').value;
+            const inmateId = document.getElementById('inmateId').value;
+
+            // Obtener la fecha y hora actuales
+            const currentDate = new Date().toLocaleString(); // Formato de fecha y hora
+
+            // Crear objeto de visita
+            const visita = {
+                nombre: name,
+                identificacionVisitante: visitorId,
+                relacionRecluso: relation, // Agregar relación
+                identificacionRecluso: inmateId,
+                fechaIngreso: currentDate
+            };
+
+            // Agregar la visita al historial
+            visitas.push(visita);
+            localStorage.setItem('historialVisitas', JSON.stringify(visitas)); // Guardar en localStorage
+
+            // Agregar un nuevo visitante a la tabla
+            mostrarVisitantes(); // Actualizar la tabla con el nuevo visitante
+            document.getElementById('visitorForm').style.display = 'none'; // Ocultar formulario
+        };
+
+        document.getElementById('cancelButton').onclick = function() {
+            document.getElementById('visitorForm').style.display = 'none'; // Ocultar formulario al cancelar
+        };
+
+        // Cargar datos al inicio
+        cargarReclusos();
+        mostrarVisitantes();
+
+        // Verificar acceso del usuario
+        const loggedUser = JSON.parse(localStorage.getItem('loggedUser'));
+        const adminAccount = JSON.parse(localStorage.getItem('adminAccount'));
+
+        if (!loggedUser || (loggedUser.cargo !== "Guardia" && loggedUser.cedula !== adminAccount.cedula)) {
+            alert('Acceso denegado. No tienes permiso para acceder a esta página.');
+            window.location.href = 'inicio.html'; // Redirigir a la página de inicio
+        }
+    </script>
+
+</body>
+</html>

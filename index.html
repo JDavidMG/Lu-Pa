@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio de Sesión</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .login-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Iniciar Sesión</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="phoneNumber">Número de Teléfono:</label>
+                <input type="text" class="form-control" id="phoneNumber" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Cédula (Contraseña):</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+        </form>
+        
+        <div class="mt-3" id="errorMessage" style="color: red; text-align: center;"></div>
+
+        <div class="mt-3">
+            <button id="adminLoginButton" class="btn btn-secondary btn-block">Iniciar Sesión como Administrador</button>
+            <button id="createAdminButton" class="btn btn-warning btn-block">Crear Cuenta Administrador</button>
+        </div>
+    </div>
+
+    <script>
+        const empleados = JSON.parse(localStorage.getItem('historialEmpleados')) || [];
+        const adminAccount = JSON.parse(localStorage.getItem('adminAccount')); // Obtener cuenta de administrador
+
+        // Manejar inicio de sesión de empleados
+        document.getElementById('loginForm').onsubmit = function(event) {
+            event.preventDefault();
+
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const password = document.getElementById('password').value;
+
+            const empleado = empleados.find(emp => emp.celular === phoneNumber && emp.cedula === password);
+
+            if (empleado) {
+                // Guardamos el empleado logueado en el localStorage
+                localStorage.setItem('loggedUser', JSON.stringify(empleado));
+                // Redireccionamos al usuario a la página personal
+                window.location.href = "inicio.html";
+            } else {
+                document.getElementById('errorMessage').innerText = "Número de teléfono o cédula incorrectos.";
+            }
+        };
+
+        // Manejar inicio de sesión como administrador
+        document.getElementById('adminLoginButton').onclick = function() {
+            const phoneNumber = prompt("Ingrese el número de teléfono del administrador:");
+            const password = prompt("Ingrese la cédula del administrador:");
+
+            if (adminAccount && adminAccount.celular === phoneNumber && adminAccount.cedula === password) {
+                // Guardamos el administrador logueado en el localStorage
+                localStorage.setItem('loggedUser', JSON.stringify(adminAccount));
+                // Redireccionamos al administrador a la página principal
+                window.location.href = "inicio.html";
+            } else {
+                alert("Número de teléfono o cédula de administrador incorrectos.");
+            }
+        };
+
+        // Manejar creación de cuenta de administrador
+        document.getElementById('createAdminButton').onclick = function() {
+            if (adminAccount) {
+                alert("Ya existe una cuenta de administrador.");
+                return;
+            }
+
+            const phoneNumber = prompt("Ingrese el número de teléfono del administrador:");
+            const password = prompt("Ingrese la cédula del administrador:");
+
+            if (phoneNumber && password) {
+                const newAdminAccount = { celular: phoneNumber, cedula: password };
+                localStorage.setItem('adminAccount', JSON.stringify(newAdminAccount));
+                alert("Cuenta de administrador creada exitosamente.");
+            } else {
+                alert("Por favor, complete todos los campos.");
+            }
+        };
+    </script>
+
+</body>
+</html>
